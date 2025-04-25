@@ -1,6 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { BiAdjust } from "react-icons/bi";
+import React, { useState, useEffect, useReducer } from 'react';
 import './App.css';
+
+// Редюсер для темы
+const themeReducer = (state, action) => {
+  switch (action.type) {
+    case 'LIGHT':
+      return 'light';
+    case 'DARK':
+      return 'dark';
+    case 'TOGGLE':
+      return state === 'light' ? 'dark' : 'light';
+    default:
+      return state;
+  }
+};
 
 function App() {
   const [firstNum, setFirstNum] = useState("");
@@ -9,7 +22,7 @@ function App() {
   const [result, setResult] = useState(0);
   const [history, setHistory] = useState([]);
   const [operator, setOperator] = useState("");
-  const [theme, setTheme] = useState("light");
+  const [theme, dispatchTheme] = useReducer(themeReducer, 'light');
 
   useEffect(() => {
     const stored = localStorage.getItem("calc-history");
@@ -26,13 +39,12 @@ function App() {
         calculate();
       }
     };
-  
+
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [firstNum, secondNum, operator]);
-  
 
   const isValidInput = () => {
     return (
@@ -100,10 +112,6 @@ function App() {
     }
   };
 
-  const handleThemeToggle = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
-  };
-
   const handleOperator = (op) => {
     setOperator(op);
     setActiveInput("second");
@@ -113,11 +121,17 @@ function App() {
 
   return (
     <div className={isDark ? "app dark" : "app"}>
-      <button onClick={handleThemeToggle} style={{ marginBottom: "80px" }}>
-      <BiAdjust />
-      </button>
+      <div className="theme-toggle">
+        <button onClick={() => dispatchTheme({ type: 'LIGHT' })}>Light</button>
+        <button onClick={() => dispatchTheme({ type: 'DARK' })}>Dark</button>
+        
+        <label className="switch">
+          <input type="checkbox" checked={isDark} onChange={() => dispatchTheme({ type: 'TOGGLE' })} />
+          <span className="slider"></span>
+        </label>
+      </div>
 
-      <div>
+      <div className="inputs">
         <input
           type="text"
           value={firstNum}
@@ -134,7 +148,7 @@ function App() {
         />
       </div>
 
-      <div style={{ margin: "20px 0" }}>
+      <div className="operators">
         <button onClick={() => handleOperator("+")}>+</button>
         <button onClick={() => handleOperator("-")}>-</button>
         <button onClick={() => handleOperator("*")}>*</button>
@@ -142,26 +156,23 @@ function App() {
         <button onClick={clearAll}>Clear</button>
       </div>
 
-      <h1>{result}</h1>
+      <h1 className="result">{result}</h1>
 
-      <div>
-        <h2 style={{ marginBottom: "20px" }}>Keypad</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 50px)", gap: "20px", justifyContent: "center" }}>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
-            <button key={num} onClick={() => handleDigit(num.toString())}>{num}</button>
-          ))}
-          <button onClick={() => handleDigit(".")}>.</button>
-          <button onClick={handleBackspace}>←</button>
-          <button onClick={() => calculate() }>=</button>
-        </div>
+      <div className="keypad">
+        {[1,2,3,4,5,6,7,8,9,0].map((num) => (
+          <button key={num} onClick={() => handleDigit(num.toString())}>{num}</button>
+        ))}
+        <button onClick={() => handleDigit(".")}>.</button>
+        <button onClick={handleBackspace}>←</button>
+        <button onClick={() => calculate()}>=</button>
       </div>
 
-      <div style={{ marginTop: "40px" }}>
+      <div className="history">
         <h2>History</h2>
         {history.length === 0 ? (
           <p>No calculations yet</p>
         ) : (
-          <ul style={{ listStyle: "none", padding: 0 }}>
+          <ul>
             {history.map((entry, idx) => (
               <li key={idx}>{entry}</li>
             ))}
